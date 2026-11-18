@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#10243a"><meta name="description" content="Calculadora móvil de promedios para futuros MNQ, MES, MGC y MCL.">
+<meta name="theme-color" content="#10243a"><meta name="description" content="Calculadora móvil de promedios para futuros MNQ, MES, MGC, MCL y M6E.">
 <link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>Futures Calculator</title>
 <style>
@@ -21,11 +21,11 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
 @media(max-width:390px){.row{grid-template-columns:1fr 1fr}.card{padding:13px}.brand{font-size:19px}}
 </style></head>
 <body><main>
-<header class="top"><div><div class="brand">Futures Calculator</div><div class="sub">PROMEDIOS · MNQ / MES / MGC / MCL</div></div><span class="pill">USD</span></header>
+<header class="top"><div><div class="brand">Futures Calculator</div><div class="sub">PROMEDIOS · MNQ / MES / MGC / MCL / M6E</div></div><span class="pill">USD</span></header>
 <section class="card">
 <h2>Configuración de la operación</h2>
 <div class="row">
-<div class="field"><label>Instrumento</label><select id="instrument"><option value="MNQ">MNQ · Micro Nasdaq</option><option value="MES">MES · Micro S&amp;P 500</option><option value="MGC">MGC · Micro Oro</option><option value="MCL">MCL · Micro Petróleo WTI</option></select></div>
+<div class="field"><label>Instrumento</label><select id="instrument"><option value="MNQ">MNQ · Micro Nasdaq</option><option value="MES">MES · Micro S&amp;P 500</option><option value="MGC">MGC · Micro Oro</option><option value="MCL">MCL · Micro Petróleo WTI</option><option value="M6E">M6E · Micro Euro FX (EUR/USD)</option></select></div>
 <div class="field"><label>Estrategia</label><select id="strategy"><option value="negative">Promedio negativo</option><option value="positive">Promedio positivo</option></select></div>
 </div>
 <div class="field"><label>Dirección</label><div class="segment"><button id="long" class="active" type="button">LONG · Compra</button><button id="short" type="button">SHORT · Venta</button></div></div>
@@ -66,12 +66,12 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
 <footer>Futures Calculator · Herramienta auxiliar, no ejecuta operaciones.</footer>
 </main>
 <script>
-const specs={MNQ:{point:2,tick:.25},MES:{point:5,tick:.25},MGC:{point:10,tick:.1},MCL:{point:100,tick:.01}};
+const specs={MNQ:{point:2,tick:.25,precision:2},MES:{point:5,tick:.25,precision:2},MGC:{point:10,tick:.1,precision:2},MCL:{point:100,tick:.01,precision:2},M6E:{point:12500,tick:.0001,precision:4}};
 let direction='LONG', rows=[{qty:1,price:''}], history=[];
 const $=id=>document.getElementById(id);
 function money(v){return '$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function num(v){return Number(v)||0}
-function renderRows(){ $('entries').innerHTML=''; rows.forEach((r,i)=>{let tr=document.createElement('tr');tr.innerHTML=`<td>${i+1}</td><td><input type="number" min="0" step="1" inputmode="numeric" aria-label="Contratos entrada ${i+1}" value="${r.qty}" data-i="${i}" data-k="qty"></td><td><input type="number" step="0.01" inputmode="decimal" aria-label="Precio entrada ${i+1}" value="${r.price}" data-i="${i}" data-k="price"></td><td><button aria-label="Eliminar entrada ${i+1}" data-del="${i}">×</button></td>`;$('entries').appendChild(tr)});calculate()}
+function renderRows(){ $('entries').innerHTML=''; const precision=specs[$('instrument').value].precision; rows.forEach((r,i)=>{let tr=document.createElement('tr');tr.innerHTML=`<td>${i+1}</td><td><input type="number" min="0" step="1" inputmode="numeric" aria-label="Contratos entrada ${i+1}" value="${r.qty}" data-i="${i}" data-k="qty"></td><td><input type="number" step="${10**(-precision)}" inputmode="decimal" aria-label="Precio entrada ${i+1}" value="${r.price}" data-i="${i}" data-k="price"></td><td><button aria-label="Eliminar entrada ${i+1}" data-del="${i}">×</button></td>`;$('entries').appendChild(tr)});calculate()}
 function roundTick(price,tick,mode){let q=price/tick;return (mode==='floor'?Math.floor(q+1e-9):Math.ceil(q-1e-9))*tick}
 function calculate(){
  const ins=$('instrument').value,s=specs[ins],qty=rows.reduce((a,r)=>a+Math.max(0,num(r.qty)),0);
@@ -80,11 +80,12 @@ function calculate(){
  const tpRaw=avg+sign*tpD,slRaw=avg-sign*slD;
  const tp=qty?roundTick(tpRaw,s.tick,direction==='LONG'?'floor':'ceil'):0;
  const sl=qty?roundTick(slRaw,s.tick,direction==='LONG'?'ceil':'floor'):0;
- $('total').textContent=qty;$('average').textContent=qty?avg.toFixed(2):'—';$('pointvalue').textContent=money(s.point);
+ $('total').textContent=qty;$('average').textContent=qty?avg.toFixed(s.precision):'—';$('pointvalue').textContent=money(s.point);
  $('riskReward').textContent=`+${money(target)} / −${money(risk)}`;
- $('spec').textContent=`${ins}: ${money(s.point)} por punto y contrato · tick ${s.tick.toLocaleString('es-ES')} puntos`;
- $('tp').textContent=qty?tp.toFixed(2):'—';$('sl').textContent=qty?sl.toFixed(2):'—';
- $('tpdist').textContent=`Distancia: ${tpD.toFixed(2)} puntos`; $('sldist').textContent=`Distancia: ${slD.toFixed(2)} puntos`;
+ $('spec').textContent=ins==='M6E'?'M6E: 12.500 USD por cada 1,0000 de variación · tick 0,0001 = 1,25 USD por contrato':`${ins}: ${money(s.point)} por punto y contrato · tick ${s.tick.toLocaleString('es-ES')} puntos`;
+ $('quickPrice').step=String(s.tick);$('quickPrice').placeholder=ins==='M6E'?'Ej. 1.0850':'Precio de ejecución';
+ $('tp').textContent=qty?tp.toFixed(s.precision):'—';$('sl').textContent=qty?sl.toFixed(s.precision):'—';
+ $('tpdist').textContent=`Distancia: ${tpD.toFixed(s.precision)} puntos`; $('sldist').textContent=`Distancia: ${slD.toFixed(s.precision)} puntos`;
  $('tpl').textContent=money(qty?Math.abs(tp-avg)*qty*s.point:0);$('sll').textContent=money(qty?-Math.abs(avg-sl)*qty*s.point:0);
  return {ins,qty,avg,tp,sl,target,risk,point:s.point,tick:s.tick,strategy:$('strategy').value,direction};
 }
@@ -92,15 +93,15 @@ function updateTargets(){let positive=$('strategy').value==='positive';$('target
 $('entries').addEventListener('input',e=>{let i=e.target.dataset.i,k=e.target.dataset.k;if(i!==undefined){rows[Number(i)][k]=e.target.value;calculate()}});
 $('entries').addEventListener('click',e=>{if(e.target.dataset.del!==undefined){rows.splice(Number(e.target.dataset.del),1);if(!rows.length)rows=[{qty:0,price:''}];renderRows()}});
 $('add').onclick=()=>{rows.push({qty:1,price:''});renderRows()};
-$('quickAdd').onclick=()=>{const q=Math.floor(num($('quickQty').value)),p=$('quickPrice').value;if(q<1||p===''||!Number.isFinite(Number(p))){$('status').textContent='Introduce cantidad y precio de ejecución válidos.';return}rows.push({qty:q,price:String(Number(p))});$('quickPrice').value='';renderRows();$('status').textContent=`Añadidos ${q} contrato(s) a ${Number(p).toFixed(2)}. TP y SL recalculados.`};
+$('quickAdd').onclick=()=>{const q=Math.floor(num($('quickQty').value)),p=$('quickPrice').value;if(q<1||p===''||!Number.isFinite(Number(p))){$('status').textContent='Introduce cantidad y precio de ejecución válidos.';return}rows.push({qty:q,price:String(Number(p))});$('quickPrice').value='';renderRows();$('status').textContent=`Añadidos ${q} contrato(s) a ${Number(p).toFixed(specs[$('instrument').value].precision)}. TP y SL recalculados.`};
 $('clear').onclick=()=>{rows=[{qty:1,price:''}];renderRows();$('status').textContent='Operación limpiada.'};
-$('instrument').onchange=calculate;$('strategy').onchange=updateTargets;$('target').oninput=calculate;$('risk').oninput=calculate;
+$('instrument').onchange=()=>{renderRows();calculate()};$('strategy').onchange=updateTargets;$('target').oninput=calculate;$('risk').oninput=calculate;
 $('long').onclick=()=>{direction='LONG';$('long').classList.add('active');$('short').classList.remove('active');calculate()};
 $('short').onclick=()=>{direction='SHORT';$('short').classList.add('active');$('long').classList.remove('active');calculate()};
-$('copy').onclick=()=>{let x=calculate(),t=`${x.ins} ${x.direction} · ${x.qty} contratos\nPrecio medio: ${x.avg.toFixed(2)}\nTP: ${x.tp.toFixed(2)}\nSL: ${x.sl.toFixed(2)}\nObjetivo: ${money(x.target)} · Riesgo: ${money(x.risk)}`;navigator.clipboard?.writeText(t).then(()=>$('status').textContent='Niveles copiados.').catch(()=>$('status').textContent=t)};
+$('copy').onclick=()=>{let x=calculate(),t=`${x.ins} ${x.direction} · ${x.qty} contratos\nPrecio medio: ${x.avg.toFixed(specs[x.ins].precision)}\nTP: ${x.tp.toFixed(specs[x.ins].precision)}\nSL: ${x.sl.toFixed(specs[x.ins].precision)}\nObjetivo: ${money(x.target)} · Riesgo: ${money(x.risk)}`;navigator.clipboard?.writeText(t).then(()=>$('status').textContent='Niveles copiados.').catch(()=>$('status').textContent=t)};
 $('save').onclick=()=>{let x=calculate();if(!x.qty){$('status').textContent='Introduce al menos un contrato.';return}history.unshift({...x,date:new Date().toLocaleString('es-ES')});history=history.slice(0,20);localStorage.setItem('fc-history',JSON.stringify(history));renderHistory();$('status').textContent='Operación guardada en este dispositivo.'};
 $('quickPrice').addEventListener('keydown',e=>{if(e.key==='Enter')$('quickAdd').click()});
-function renderHistory(){if(!history.length){$('history').textContent='Todavía no hay operaciones guardadas.';return}$('history').innerHTML=history.map(x=>`<div style="padding:8px 0;border-bottom:1px solid var(--line)"><b>${x.date}</b><br>${x.ins} ${x.strategy==='negative'?'Promedio negativo':'Promedio positivo'} · ${x.direction} · ${x.qty} contratos<br>Medio ${x.avg.toFixed(2)} · TP ${x.tp.toFixed(2)} · SL ${x.sl.toFixed(2)}</div>`).join('')}
+function renderHistory(){if(!history.length){$('history').textContent='Todavía no hay operaciones guardadas.';return}$('history').innerHTML=history.map(x=>`<div style="padding:8px 0;border-bottom:1px solid var(--line)"><b>${x.date}</b><br>${x.ins} ${x.strategy==='negative'?'Promedio negativo':'Promedio positivo'} · ${x.direction} · ${x.qty} contratos<br>Medio ${x.avg.toFixed(specs[x.ins]?.precision||2)} · TP ${x.tp.toFixed(specs[x.ins]?.precision||2)} · SL ${x.sl.toFixed(specs[x.ins]?.precision||2)}</div>`).join('')}
 $('export').onclick=()=>{let x=calculate(),csv='Campo,Valor\\n'+Object.entries(x).map(([k,v])=>`${k},${v}`).join('\\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='operacion-futuros.csv';a.click();URL.revokeObjectURL(a.href)};
 try{history=JSON.parse(localStorage.getItem('fc-history')||'[]')}catch(e){}renderRows();renderHistory();if('serviceWorker'in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js');
 </script></body></html>
