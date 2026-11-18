@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#10243a"><meta name="description" content="Calculadora móvil de promedios para futuros MNQ, MES y MGC.">
+<meta name="theme-color" content="#10243a"><meta name="description" content="Calculadora móvil de promedios para futuros MNQ, MES, MGC y MCL.">
 <link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>Futures Calculator</title>
 <style>
@@ -21,11 +21,11 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
 @media(max-width:390px){.row{grid-template-columns:1fr 1fr}.card{padding:13px}.brand{font-size:19px}}
 </style></head>
 <body><main>
-<header class="top"><div><div class="brand">Futures Calculator</div><div class="sub">PROMEDIOS · MNQ / MES / MGC</div></div><span class="pill">USD</span></header>
+<header class="top"><div><div class="brand">Futures Calculator</div><div class="sub">PROMEDIOS · MNQ / MES / MGC / MCL</div></div><span class="pill">USD</span></header>
 <section class="card">
 <h2>Configuración de la operación</h2>
 <div class="row">
-<div class="field"><label>Instrumento</label><select id="instrument"><option value="MNQ">MNQ · Micro Nasdaq</option><option value="MES">MES · Micro S&amp;P 500</option><option value="MGC">MGC · Micro Oro</option></select></div>
+<div class="field"><label>Instrumento</label><select id="instrument"><option value="MNQ">MNQ · Micro Nasdaq</option><option value="MES">MES · Micro S&amp;P 500</option><option value="MGC">MGC · Micro Oro</option><option value="MCL">MCL · Micro Petróleo WTI</option></select></div>
 <div class="field"><label>Estrategia</label><select id="strategy"><option value="negative">Promedio negativo</option><option value="positive">Promedio positivo</option></select></div>
 </div>
 <div class="field"><label>Dirección</label><div class="segment"><button id="long" class="active" type="button">LONG · Compra</button><button id="short" type="button">SHORT · Venta</button></div></div>
@@ -66,7 +66,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
 <footer>Futures Calculator · Herramienta auxiliar, no ejecuta operaciones.</footer>
 </main>
 <script>
-const specs={MNQ:{point:2,tick:.25},MES:{point:5,tick:.25},MGC:{point:10,tick:.1}};
+const specs={MNQ:{point:2,tick:.25},MES:{point:5,tick:.25},MGC:{point:10,tick:.1},MCL:{point:100,tick:.01}};
 let direction='LONG', rows=[{qty:1,price:''}], history=[];
 const $=id=>document.getElementById(id);
 function money(v){return '$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
