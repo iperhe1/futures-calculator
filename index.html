@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10243a"><meta name="description" content="Calculadora móvil de promedios para futuros MNQ, MES y MGC.">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Futures Calculator</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1420;--panel:#142438;--panel2:#1b3048;--muted:#9eb0c4;--text:#f2f6fb;--green:#35d39a;--red:#ff737d;--blue:#69b7ff;--line:#29415b}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#10243a,#09121d 55%);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{max-width:720px;margin:auto;padding:18px 14px 44px}.top{display:flex;justify-content:space-between;align-items:center;margin:8px 2px 18px}.brand{font-weight:800;font-size:21px;letter-spacing:.2px}.sub{color:var(--muted);font-size:12px;letter-spacing:1.2px}.pill{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--blue);font-size:12px}
+.card{background:rgba(20,36,56,.96);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 10px 30px #0002}
+h2{font-size:15px;margin:0 0 13px;color:#dce9f7}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin:10px 0}.field label{display:block;color:var(--muted);font-size:12px;margin:0 0 6px}
+select,input{width:100%;background:#0c1928;color:var(--text);border:1px solid #34506c;border-radius:11px;padding:12px;font-size:16px;min-height:46px}
+.segment{display:flex;gap:7px}.segment button,.btn{flex:1;border:1px solid #35516d;background:#0c1928;color:var(--text);border-radius:11px;padding:11px;font-weight:700}.segment button.active{background:#234767;border-color:var(--blue);color:white}
+.targets{display:grid;grid-template-columns:1fr 1fr;gap:10px}.target{padding:13px;border-radius:13px;background:#0d1b2a}.target small{display:block;color:var(--muted);font-size:11px}.target strong{font-size:20px}.pos{color:var(--green)}.neg{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;color:var(--muted);font-weight:600;padding:8px 4px}td{padding:6px 3px;border-top:1px solid var(--line)}td input{padding:8px 6px;min-height:38px;font-size:14px}td button{border:0;background:#402632;color:#ffb3b8;border-radius:8px;padding:8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btn{cursor:pointer}.btn.primary{background:#1c5277;border-color:#347eae}.btn.soft{background:#1b3048}.result{display:grid;grid-template-columns:1fr 1fr;gap:10px}.result .target{border:1px solid var(--line)}.result strong{font-size:clamp(19px,5vw,26px);display:block;margin-top:4px;word-break:break-word}
+.note{font-size:12px;color:var(--muted);line-height:1.5}.summary{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.summary:last-child{border:0}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
+@media(max-width:390px){.row{grid-template-columns:1fr 1fr}.card{padding:13px}.brand{font-size:19px}}
+</style></head>
+<body><main>
+<header class="top"><div><div class="brand">Futures Calculator</div><div class="sub">PROMEDIOS · MNQ / MES / MGC</div></div><span class="pill">USD</span></header>
+<section class="card">
+<h2>Configuración de la operación</h2>
+<div class="row">
+<div class="field"><label>Instrumento</label><select id="instrument"><option value="MNQ">MNQ · Micro Nasdaq</option><option value="MES">MES · Micro S&amp;P 500</option><option value="MGC">MGC · Micro Oro</option></select></div>
+<div class="field"><label>Estrategia</label><select id="strategy"><option value="negative">Promedio negativo</option><option value="positive">Promedio positivo</option></select></div>
+</div>
+<div class="field"><label>Dirección</label><div class="segment"><button id="long" class="active" type="button">LONG · Compra</button><button id="short" type="button">SHORT · Venta</button></div></div>
+<div class="row">
+<div class="field"><label>Objetivo TP (USD)</label><input id="target" type="number" min="0" step="1" value="150"></div>
+<div class="field"><label>Riesgo SL (USD)</label><input id="risk" type="number" min="0" step="1" value="1000"></div>
+</div>
+<div class="note" id="spec">MNQ: 2 USD por punto y contrato · tick 0,25 puntos</div>
+</section>
+<section class="card">
+<h2>Entradas ejecutadas</h2>
+<p class="note">Añade cada tramo ejecutado. Si compras varios contratos al mismo precio, indícalos juntos en una fila.</p>
+<div class="row" style="margin-bottom:10px">
+<div class="field"><label>Nueva entrada · contratos</label><input id="quickQty" type="number" min="1" step="1" inputmode="numeric" value="1"></div>
+<div class="field"><label>Nueva entrada · precio ejecutado</label><input id="quickPrice" type="number" step="0.01" inputmode="decimal" placeholder="Precio de ejecución"></div>
+</div>
+<div class="actions" style="margin:0 0 12px"><button class="btn primary" id="quickAdd">＋ Añadir promedio ejecutado</button></div>
+<table><thead><tr><th>#</th><th>Contratos</th><th>Precio</th><th></th></tr></thead><tbody id="entries"></tbody></table>
+<div class="actions"><button class="btn primary" id="add">＋ Añadir entrada</button><button class="btn soft" id="clear">Limpiar operación</button></div>
+</section>
+<section class="card">
+<h2>Resultado para toda la posición</h2>
+<div class="summary"><span>Contratos totales</span><strong id="total">0</strong></div>
+<div class="summary"><span>Precio medio ponderado</span><strong id="average">—</strong></div>
+<div class="summary"><span>Valor por punto / contrato</span><strong id="pointvalue">$2</strong></div>
+<div class="summary"><span>Riesgo / beneficio configurado</span><strong id="riskReward">+$150 / −$1.000</strong></div>
+<div class="result" style="margin-top:12px">
+<div class="target"><small class="pos">TAKE PROFIT · NIVEL</small><strong class="pos" id="tp">—</strong><small id="tpdist">Distancia: —</small></div>
+<div class="target"><small class="neg">STOP LOSS · NIVEL</small><strong class="neg" id="sl">—</strong><small id="sldist">Distancia: —</small></div>
+</div>
+<div class="summary"><span>P/L estimado en TP</span><strong class="pos" id="tpl">$0</strong></div>
+<div class="summary"><span>P/L estimado en SL</span><strong class="neg" id="sll">$0</strong></div>
+<div class="actions"><button class="btn primary" id="copy">Copiar niveles</button><button class="btn soft" id="save">Guardar operación</button><button class="btn soft" id="export">Exportar CSV</button></div>
+<p class="note" id="status" aria-live="polite"></p>
+</section>
+<section class="card"><h2>Operaciones guardadas</h2><div id="history" class="note">Todavía no hay operaciones guardadas.</div></section>
+<section class="card"><h2>Cómo se calcula</h2><p class="note">Precio medio ponderado = suma (contratos × precio) / contratos totales. Las distancias al TP y SL se calculan para que el P/L teórico de toda la posición alcance los importes configurados. Los niveles se redondean al tick hacia el precio medio para no exceder el objetivo o riesgo previsto.</p><p class="note"><b>Importante:</b> cálculo teórico antes de comisiones, deslizamiento y posibles diferencias de ejecución. El stop no garantiza una pérdida máxima. Verifica siempre cantidad y órdenes en tu bróker. La calculadora no envía órdenes ni se conecta a Lucid, Tradovate o NinjaTrader.</p></section>
+<footer>Futures Calculator · Herramienta auxiliar, no ejecuta operaciones.</footer>
+</main>
+<script>
+const specs={MNQ:{point:2,tick:.25},MES:{point:5,tick:.25},MGC:{point:10,tick:.1}};
+let direction='LONG', rows=[{qty:1,price:''}], history=[];
+const $=id=>document.getElementById(id);
+function money(v){return '$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function num(v){return Number(v)||0}
+function renderRows(){ $('entries').innerHTML=''; rows.forEach((r,i)=>{let tr=document.createElement('tr');tr.innerHTML=`<td>${i+1}</td><td><input type="number" min="0" step="1" inputmode="numeric" aria-label="Contratos entrada ${i+1}" value="${r.qty}" data-i="${i}" data-k="qty"></td><td><input type="number" step="0.01" inputmode="decimal" aria-label="Precio entrada ${i+1}" value="${r.price}" data-i="${i}" data-k="price"></td><td><button aria-label="Eliminar entrada ${i+1}" data-del="${i}">×</button></td>`;$('entries').appendChild(tr)});calculate()}
+function roundTick(price,tick,mode){let q=price/tick;return (mode==='floor'?Math.floor(q+1e-9):Math.ceil(q-1e-9))*tick}
+function calculate(){
+ const ins=$('instrument').value,s=specs[ins],qty=rows.reduce((a,r)=>a+Math.max(0,num(r.qty)),0);
+ const weighted=rows.reduce((a,r)=>a+Math.max(0,num(r.qty))*num(r.price),0),avg=qty?weighted/qty:0;
+ const target=num($('target').value),risk=num($('risk').value),tpD=qty?target/(qty*s.point):0,slD=qty?risk/(qty*s.point):0,sign=direction==='LONG'?1:-1;
+ const tpRaw=avg+sign*tpD,slRaw=avg-sign*slD;
+ const tp=qty?roundTick(tpRaw,s.tick,direction==='LONG'?'floor':'ceil'):0;
+ const sl=qty?roundTick(slRaw,s.tick,direction==='LONG'?'ceil':'floor'):0;
+ $('total').textContent=qty;$('average').textContent=qty?avg.toFixed(2):'—';$('pointvalue').textContent=money(s.point);
+ $('riskReward').textContent=`+${money(target)} / −${money(risk)}`;
+ $('spec').textContent=`${ins}: ${money(s.point)} por punto y contrato · tick ${s.tick.toLocaleString('es-ES')} puntos`;
+ $('tp').textContent=qty?tp.toFixed(2):'—';$('sl').textContent=qty?sl.toFixed(2):'—';
+ $('tpdist').textContent=`Distancia: ${tpD.toFixed(2)} puntos`; $('sldist').textContent=`Distancia: ${slD.toFixed(2)} puntos`;
+ $('tpl').textContent=money(qty?Math.abs(tp-avg)*qty*s.point:0);$('sll').textContent=money(qty?-Math.abs(avg-sl)*qty*s.point:0);
+ return {ins,qty,avg,tp,sl,target,risk,point:s.point,tick:s.tick,strategy:$('strategy').value,direction};
+}
+function updateTargets(){let positive=$('strategy').value==='positive';$('target').value=positive?1500:150;$('risk').value=positive?2000:1000;calculate()}
+$('entries').addEventListener('input',e=>{let i=e.target.dataset.i,k=e.target.dataset.k;if(i!==undefined){rows[Number(i)][k]=e.target.value;calculate()}});
+$('entries').addEventListener('click',e=>{if(e.target.dataset.del!==undefined){rows.splice(Number(e.target.dataset.del),1);if(!rows.length)rows=[{qty:0,price:''}];renderRows()}});
+$('add').onclick=()=>{rows.push({qty:1,price:''});renderRows()};
+$('quickAdd').onclick=()=>{const q=Math.floor(num($('quickQty').value)),p=$('quickPrice').value;if(q<1||p===''||!Number.isFinite(Number(p))){$('status').textContent='Introduce cantidad y precio de ejecución válidos.';return}rows.push({qty:q,price:String(Number(p))});$('quickPrice').value='';renderRows();$('status').textContent=`Añadidos ${q} contrato(s) a ${Number(p).toFixed(2)}. TP y SL recalculados.`};
+$('clear').onclick=()=>{rows=[{qty:1,price:''}];renderRows();$('status').textContent='Operación limpiada.'};
+$('instrument').onchange=calculate;$('strategy').onchange=updateTargets;$('target').oninput=calculate;$('risk').oninput=calculate;
+$('long').onclick=()=>{direction='LONG';$('long').classList.add('active');$('short').classList.remove('active');calculate()};
+$('short').onclick=()=>{direction='SHORT';$('short').classList.add('active');$('long').classList.remove('active');calculate()};
+$('copy').onclick=()=>{let x=calculate(),t=`${x.ins} ${x.direction} · ${x.qty} contratos\nPrecio medio: ${x.avg.toFixed(2)}\nTP: ${x.tp.toFixed(2)}\nSL: ${x.sl.toFixed(2)}\nObjetivo: ${money(x.target)} · Riesgo: ${money(x.risk)}`;navigator.clipboard?.writeText(t).then(()=>$('status').textContent='Niveles copiados.').catch(()=>$('status').textContent=t)};
+$('save').onclick=()=>{let x=calculate();if(!x.qty){$('status').textContent='Introduce al menos un contrato.';return}history.unshift({...x,date:new Date().toLocaleString('es-ES')});history=history.slice(0,20);localStorage.setItem('fc-history',JSON.stringify(history));renderHistory();$('status').textContent='Operación guardada en este dispositivo.'};
+$('quickPrice').addEventListener('keydown',e=>{if(e.key==='Enter')$('quickAdd').click()});
+function renderHistory(){if(!history.length){$('history').textContent='Todavía no hay operaciones guardadas.';return}$('history').innerHTML=history.map(x=>`<div style="padding:8px 0;border-bottom:1px solid var(--line)"><b>${x.date}</b><br>${x.ins} ${x.strategy==='negative'?'Promedio negativo':'Promedio positivo'} · ${x.direction} · ${x.qty} contratos<br>Medio ${x.avg.toFixed(2)} · TP ${x.tp.toFixed(2)} · SL ${x.sl.toFixed(2)}</div>`).join('')}
+$('export').onclick=()=>{let x=calculate(),csv='Campo,Valor\\n'+Object.entries(x).map(([k,v])=>`${k},${v}`).join('\\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='operacion-futuros.csv';a.click();URL.revokeObjectURL(a.href)};
+try{history=JSON.parse(localStorage.getItem('fc-history')||'[]')}catch(e){}renderRows();renderHistory();if('serviceWorker'in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js');
+</script></body></html>
